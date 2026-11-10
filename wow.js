@@ -25,9 +25,11 @@
       }, 1150);
     }
 
-    setTimeout(open, 2300);
+    // A abertura espera o clique em "Entrar": esse clique libera o som da música no navegador
     if (el) el.addEventListener("click", open);
-    window.addEventListener("keydown", open, { once: true });
+    window.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " " || e.key === "Escape") open(); });
+    var enter = el && el.querySelector(".intro__enter");
+    if (enter) setTimeout(function () { try { enter.focus({ preventScroll: true }); } catch (e) {} }, 1700);
   })();
 
   /* ======================================================================
@@ -646,7 +648,7 @@
   });
 
   // Primeira interação libera o áudio quando o autoplay foi bloqueado
-  var events = ["pointerdown", "keydown", "touchstart"];
+  var events = ["pointerdown", "pointerup", "click", "keydown", "touchend"];
   function unlock(e) {
     if (e && e.target && e.target.closest && e.target.closest(".music__btn")) return cleanup();
     if (!userOff && audio.paused) play();
@@ -655,11 +657,10 @@
   function cleanup() { events.forEach(function (ev) { window.removeEventListener(ev, unlock, true); }); }
 
   // Só busca o áudio depois que a página carregou, para não atrasar o que aparece primeiro
+  if (!userOff) events.forEach(function (ev) { window.addEventListener(ev, unlock, true); });
   function autostart() {
-    if (userOff) return;
-    play().then(function (ok) {
-      if (!ok) events.forEach(function (ev) { window.addEventListener(ev, unlock, true); });
-    });
+    if (userOff || !audio.paused) return;
+    play().then(function (ok) { if (ok) cleanup(); });
   }
   if (document.readyState === "complete") autostart();
   else window.addEventListener("load", autostart, { once: true });
